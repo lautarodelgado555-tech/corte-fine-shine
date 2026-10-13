@@ -36,6 +36,13 @@
       "when": 1791916532919,
       "tag": "0004_availability_driven_validation",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791916676732,
+      "tag": "0005_deposit_pending_status",
+      "breakpoints": true
     }
   ]
 }

@@ -38,6 +38,13 @@ const dict = {
   cancelled: { es: "Reserva cancelada", en: "Booking cancelled" },
   min: { es: "min", en: "min" },
   hello: { es: "Hola", en: "Hi" },
+  pendingDeposit: { es: "Seña pendiente", en: "Deposit pending" },
+  payDeposit: { es: "Pagar seña", en: "Pay deposit" },
+  deposit: { es: "seña", en: "deposit" },
+  paidThanks: {
+    es: "¡Pago recibido! Tu reserva se confirma en instantes.",
+    en: "Payment received! Your booking will be confirmed shortly.",
+  },
   error: { es: "Algo salió mal", en: "Something went wrong" },
 } as const;
 

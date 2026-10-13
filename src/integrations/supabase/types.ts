@@ -162,6 +162,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      booking_holds_slot: {
+        Args: { _created: string; _status: string }
+        Returns: boolean
+      }
       get_busy_slots: {
         Args: { p_date: string }
         Returns: {
