@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyStripeSignature } from "@/lib/stripe-signature";
+import { isUnconfirmableBooking, refundCheckoutPayment } from "@/lib/stripe-refund";
 
 export const Route = createFileRoute("/api/public/stripe-webhook")({
   server: {
@@ -14,7 +15,9 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
 
         const event = JSON.parse(body) as {
           type: string;
-          data: { object: { id: string; payment_status?: string; metadata?: { booking_id?: string } } };
+          data: {
+            object: { id: string; payment_status?: string; payment_intent?: string; metadata?: { booking_id?: string } };
+          };
         };
         if (event.type === "checkout.session.completed" && event.data.object.payment_status === "paid") {
           const s = event.data.object;
@@ -27,7 +30,21 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
               .eq("id", bookingId)
               .eq("stripe_session_id", s.id)
               .eq("status", "pending_payment");
-            if (error) {
+            if (error && isUnconfirmableBooking(error.message)) {
+              // Paid after the hold expired and the slot was taken: cancel and refund
+              // instead of leaving the customer charged without a booking.
+              console.error("Paid booking can't be confirmed, refunding", bookingId, error.message);
+              await supabaseAdmin
+                .from("bookings")
+                .update({ status: "cancelled" })
+                .eq("id", bookingId)
+                .eq("stripe_session_id", s.id)
+                .eq("status", "pending_payment");
+              const key = process.env['STRIPE_SECRET_KEY'];
+              if (!key || !s.payment_intent || !(await refundCheckoutPayment(s.payment_intent, s.id, key))) {
+                return new Response("Refund failed", { status: 500 });
+              }
+            } else if (error) {
               console.error("Webhook confirm failed", error.message);
               return new Response("Update failed", { status: 500 });
             }
