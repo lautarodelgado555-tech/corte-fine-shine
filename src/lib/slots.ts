@@ -3,7 +3,7 @@ export const CLOSE_MIN = 20 * 60;
 export const STEP = 30;
 
 export const toMin = (t: string) => {
-  const [h, m] = t.split(":").map(Number);
+  const [h = 0, m = 0] = t.split(":").map(Number);
   return h * 60 + m;
 };
 export const toTime = (m: number) =>

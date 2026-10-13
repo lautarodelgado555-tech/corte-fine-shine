@@ -43,7 +43,8 @@ function AuthPage() {
       if (mode === "up") {
         const parsed = signUpSchema.safeParse(form);
         if (!parsed.success) {
-          toast.error(parsed.error.issues[0].path.join(" ") + ": " + parsed.error.issues[0].message);
+          const issue = parsed.error.issues[0];
+          toast.error(issue ? `${issue.path.join(" ")}: ${issue.message}` : t("error"));
           return;
         }
         const { data, error } = await supabase.auth.signUp({
