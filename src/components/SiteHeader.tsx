@@ -9,12 +9,21 @@ import { useI18n } from "@/lib/i18n";
 export function SiteHeader() {
   const { t, lang, setLang } = useI18n();
   const [signedIn, setSignedIn] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSignedIn(!!s));
+    const check = async (uid?: string) => {
+      setSignedIn(!!uid);
+      if (!uid) return setIsOwner(false);
+      const { data } = await supabase.rpc("has_role", { _user_id: uid, _role: "owner" });
+      setIsOwner(!!data);
+    };
+    supabase.auth.getSession().then(({ data }) => check(data.session?.user.id));
+    const { data } = supabase.auth.onAuthStateChange((_e, s) => {
+      setTimeout(() => check(s?.user.id), 0);
+    });
     return () => data.subscription.unsubscribe();
   }, []);
 
@@ -48,6 +57,11 @@ export function SiteHeader() {
           </div>
           {signedIn ? (
             <>
+              {isOwner && (
+                <Button asChild variant="header" size="sm">
+                  <Link to="/admin">Admin</Link>
+                </Button>
+              )}
               <Button asChild variant="header" size="sm">
                 <Link to="/book">{t("myBookings")}</Link>
               </Button>

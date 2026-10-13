@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
-import { availableSlots, isOpenDay } from "@/lib/slots";
+import { availableSlots, isOpenDay, windowsFor } from "@/lib/slots";
 
 export const Route = createFileRoute("/_authenticated/book")({
   head: () => ({
@@ -48,6 +48,15 @@ function BookPage() {
       return data;
     },
   });
+  const availability = useQuery({
+    queryKey: ["availability"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("availability").select("weekday, start_time, end_time");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const windows = availability.data ?? [];
   const busy = useQuery({
     queryKey: ["busy", dateStr],
     enabled: !!dateStr,
@@ -76,8 +85,14 @@ function BookPage() {
   const slots = useMemo(() => {
     if (!service || !date || !busy.data) return [];
     const now = new Date();
-    return availableSlots(service.duration_min, busy.data, isSameDay(date, now), now.getHours() * 60 + now.getMinutes());
-  }, [service, date, busy.data]);
+    return availableSlots(
+      service.duration_minutes ?? service.duration_min,
+      busy.data,
+      isSameDay(date, now),
+      now.getHours() * 60 + now.getMinutes(),
+      windowsFor(date, windows),
+    );
+  }, [service, date, busy.data, windows]);
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["bookings"] });
@@ -146,7 +161,7 @@ function BookPage() {
                 >
                   <div className="font-semibold">{lang === "es" ? s.name_es : s.name_en}</div>
                   <div className="mt-1 text-sm text-muted-foreground">
-                    {s.duration_min} {t("min")} · {money(s.price)}
+                    {s.duration_minutes ?? s.duration_min} {t("min")} · {money(s.price)}
                   </div>
                 </button>
               ))}
@@ -164,7 +179,7 @@ function BookPage() {
                   setTime(undefined);
                 }}
                 locale={locale}
-                disabled={(d) => d < today || d > addDays(today, 60) || !isOpenDay(d)}
+                disabled={(d) => d < today || d > addDays(today, 60) || !isOpenDay(d, windows)}
                 className="mt-3 rounded-xl border p-3 pointer-events-auto"
               />
             </div>
