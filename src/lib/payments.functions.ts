@@ -8,7 +8,7 @@ export const createDepositCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ bookingId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const key = process.env.STRIPE_SECRET_KEY;
+    const key = process.env['STRIPE_SECRET_KEY'];
     if (!key) throw new Error("Payments are not configured yet");
     if (!key.startsWith("sk_test_")) throw new Error("Only Stripe test mode is allowed");
 
