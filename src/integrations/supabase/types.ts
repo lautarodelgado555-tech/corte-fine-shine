@@ -14,35 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      availability: {
+        Row: {
+          end_time: string
+          id: string
+          start_time: string
+          weekday: number
+        }
+        Insert: {
+          end_time: string
+          id?: string
+          start_time: string
+          weekday: number
+        }
+        Update: {
+          end_time?: string
+          id?: string
+          start_time?: string
+          weekday?: number
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           booking_date: string
+          client_id: string | null
           created_at: string
           end_time: string
           id: string
           service_id: string
           start_time: string
+          starts_at: string | null
           status: string
+          stripe_session_id: string | null
           user_id: string
         }
         Insert: {
           booking_date: string
+          client_id?: string | null
           created_at?: string
           end_time: string
           id?: string
           service_id: string
           start_time: string
+          starts_at?: string | null
           status?: string
+          stripe_session_id?: string | null
           user_id?: string
         }
         Update: {
           booking_date?: string
+          client_id?: string | null
           created_at?: string
           end_time?: string
           id?: string
           service_id?: string
           start_time?: string
+          starts_at?: string | null
           status?: string
+          stripe_session_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -78,7 +108,9 @@ export type Database = {
       }
       services: {
         Row: {
+          deposit: number
           duration_min: number
+          duration_minutes: number | null
           id: string
           name_en: string
           name_es: string
@@ -86,7 +118,9 @@ export type Database = {
           sort: number
         }
         Insert: {
+          deposit?: number
           duration_min: number
+          duration_minutes?: number | null
           id?: string
           name_en: string
           name_es: string
@@ -94,12 +128,32 @@ export type Database = {
           sort?: number
         }
         Update: {
+          deposit?: number
           duration_min?: number
+          duration_minutes?: number | null
           id?: string
           name_en?: string
           name_es?: string
           price?: number
           sort?: number
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -115,9 +169,16 @@ export type Database = {
           start_time: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "client" | "owner"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -244,6 +305,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["client", "owner"],
+    },
   },
 } as const
