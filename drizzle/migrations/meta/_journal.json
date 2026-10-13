@@ -15,6 +15,20 @@
       "when": 1791916380248,
       "tag": "0001_roles_availability_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791916467836,
+      "tag": "0002_tighten_booking_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791916482426,
+      "tag": "0003_revoke_function_execute",
+      "breakpoints": true
     }
   ]
 }
