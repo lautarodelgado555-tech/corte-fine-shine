@@ -14,13 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          booking_date: string
+          created_at: string
+          end_time: string
+          id: string
+          service_id: string
+          start_time: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          booking_date: string
+          created_at?: string
+          end_time: string
+          id?: string
+          service_id: string
+          start_time: string
+          status?: string
+          user_id?: string
+        }
+        Update: {
+          booking_date?: string
+          created_at?: string
+          end_time?: string
+          id?: string
+          service_id?: string
+          start_time?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          phone: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string
+          id: string
+          phone?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          duration_min: number
+          id: string
+          name_en: string
+          name_es: string
+          price: number
+          sort: number
+        }
+        Insert: {
+          duration_min: number
+          id?: string
+          name_en: string
+          name_es: string
+          price: number
+          sort?: number
+        }
+        Update: {
+          duration_min?: number
+          id?: string
+          name_en?: string
+          name_es?: string
+          price?: number
+          sort?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_busy_slots: {
+        Args: { p_date: string }
+        Returns: {
+          end_time: string
+          start_time: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
