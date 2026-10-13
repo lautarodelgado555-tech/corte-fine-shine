@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, isSameDay, startOfDay, addDays } from "date-fns";
 import { es as esLocale, enUS } from "date-fns/locale";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
+import { createDepositCheckout } from "@/lib/payments.functions";
 import { availableSlots, isOpenDay, windowsFor } from "@/lib/slots";
 
 export const Route = createFileRoute("/_authenticated/book")({
@@ -71,8 +72,8 @@ function BookPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bookings")
-        .select("id, booking_date, start_time, services(name_es, name_en, duration_min)")
-        .eq("status", "confirmed")
+        .select("id, booking_date, start_time, status, created_at, services(name_es, name_en, deposit)")
+        .in("status", ["confirmed", "pending_payment"])
         .gte("booking_date", format(new Date(), "yyyy-MM-dd"))
         .order("booking_date")
         .order("start_time");
@@ -102,16 +103,23 @@ function BookPage() {
   const create = useMutation({
     mutationFn: async () => {
       const { data: u } = await supabase.auth.getUser();
-      const { error } = await supabase.from("bookings").insert({
-        user_id: u.user!.id,
-        service_id: serviceId!,
-        booking_date: dateStr!,
-        start_time: time!,
-        end_time: time!,
-      });
+      const { data, error } = await supabase
+        .from("bookings")
+        .insert({
+          user_id: u.user!.id,
+          service_id: serviceId!,
+          booking_date: dateStr!,
+          start_time: time!,
+          end_time: time!,
+        })
+        .select("id, status")
+        .single();
       if (error) throw error;
+      if (data.status === "pending_payment") await payDeposit(data.id);
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data.status === "pending_payment") return;
       toast.success(t("booked"));
       setTime(undefined);
       refresh();
@@ -121,6 +129,11 @@ function BookPage() {
       refresh();
     },
   });
+
+  async function payDeposit(bookingId: string) {
+    const { url } = await createDepositCheckout({ data: { bookingId } });
+    window.location.href = url;
+  }
 
   const cancel = useMutation({
     mutationFn: async (id: string) => {
@@ -135,6 +148,12 @@ function BookPage() {
   });
 
   const today = startOfDay(new Date());
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("paid") === "1") {
+      toast.success(t("paidThanks"));
+      window.history.replaceState(null, "", "/book");
+    }
+  }, [t]);
 
   return (
     <main className="mx-auto max-w-5xl px-5 py-10">
@@ -162,6 +181,7 @@ function BookPage() {
                   <div className="font-semibold">{lang === "es" ? s.name_es : s.name_en}</div>
                   <div className="mt-1 text-sm text-muted-foreground">
                     {s.duration_minutes ?? s.duration_min} {t("min")} · {money(s.price)}
+                    {s.deposit > 0 && ` · ${t("deposit")} ${money(s.deposit)}`}
                   </div>
                 </button>
               ))}
@@ -231,6 +251,22 @@ function BookPage() {
                 <div className="mt-1 font-semibold">
                   {b.start_time.slice(0, 5)} · {lang === "es" ? b.services?.name_es : b.services?.name_en}
                 </div>
+                {b.status === "pending_payment" && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="rounded-full bg-accent px-2 py-0.5 text-xs text-accent-foreground">
+                      {t("pendingDeposit")}
+                    </span>
+                    {Date.now() - new Date(b.created_at).getTime() < 30 * 60_000 && (
+                      <Button
+                        size="sm"
+                        className="h-7"
+                        onClick={() => payDeposit(b.id).catch((e: Error) => toast.error(e.message))}
+                      >
+                        {t("payDeposit")} {money(b.services?.deposit ?? 0)}
+                      </Button>
+                    )}
+                  </div>
+                )}
                 <button
                   onClick={() => cancel.mutate(b.id)}
                   className="mt-2 text-sm text-muted-foreground hover:text-destructive"
