@@ -63,7 +63,7 @@ export function SiteHeader() {
                 </Button>
               )}
               <Button asChild variant="header" size="sm">
-                <Link to="/book">{t("myBookings")}</Link>
+                <Link to="/book" hash="mis-reservas">{t("myBookings")}</Link>
               </Button>
               <Button variant="header" size="sm" onClick={signOut}>
                 {t("signOut")}

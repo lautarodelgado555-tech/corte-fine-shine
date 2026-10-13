@@ -239,7 +239,7 @@ function BookPage() {
           </Button>
         </section>
 
-        <aside>
+        <aside id="mis-reservas" className="scroll-mt-24">
           <h2 className="text-xl font-semibold">{t("upcoming")}</h2>
           <div className="mt-3 space-y-3">
             {bookings.data?.length === 0 && <p className="text-sm text-muted-foreground">{t("none")}</p>}
